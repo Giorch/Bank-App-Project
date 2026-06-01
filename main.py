@@ -109,6 +109,35 @@ class Main:
                     user.getAccounts().append(acc)
                 case "3":
                     return
+
+    @staticmethod  
+    def _Transfer(user: Customer):
+        while True:
+            os.system("cls")
+            for a in user.getAccounts():
+                print(f"- {a.GetId()}")
+            account_id1 = input("Select from which Account: ")
+            os.system("cls")
+            frm = next((a for a in user.getAccounts() if a.GetId() == account_id1), None)
+            for a in user.getAccounts():
+                print(f"- {a.GetId()}")
+            account_id2 = input("Select to which Account: ")
+            to = next((a for a in user.getAccounts() if a.GetId() == account_id2 and account_id2 != account_id1), None)
+            if(frm and to):
+                amount = int(input("Select Amount: "))
+                if frm.GetBalance() >= amount:
+                    frm.Withdraw(amount)
+                    to.Deposit(amount)
+                    print(f"Transfered {amount} from Account with ID {frm} to Account with ID {to}")
+                    os.system("pause")
+                    break
+                else:
+                    print("Insufficient balance!")
+                    os.system("pause")
+            else:
+                print()
+                
+                
             
     @staticmethod
     def _welcome():
@@ -147,20 +176,45 @@ class Main:
                     for a in user.getAccounts():
                         print("Account ID: " + a.GetId())
                         print(f"Account Balance: {a.GetBalance()}\n")
-                    input()
+                    os.system("pause")
                 case "3":
                     for a in user.getAccounts():
                         print(f"- {a.GetId()}")
                     account_id = input("Select Account: ")
                     acc = next((a for a in user.getAccounts() if a.GetId() == account_id), None)
-
+                    if acc:
+                        amount = int(input("Select Amount: "))
+                        acc.Deposit(abs(amount))
+                        print(f"Withdrew {amount}. New balance: {acc.GetBalance()}")
+                        os.system("pause")
                     
                 case "4":
-                    print("Withdraw Selected")
+                    for a in user.getAccounts():
+                        print(f"- {a.GetId()}")
+                    account_id = input("Select Account: ")
+                    acc = next((a for a in user.getAccounts() if a.GetId() == account_id), None)
+                    amount = int(input("Select Amount: "))
+                    if acc and acc.GetBalance() >= amount:
+                        acc.Withdraw(abs(amount))
+                        print(f"Withdrew {amount}. New balance: {acc.GetBalance()}")
+                        os.system("pause")
+                    else:
+                       print("Insufficient balance!")
                 case "5":
-                    print("Transfer Selected")
+                    Main._Transfer(user)
                 case "6":
-                    print("Close Account Selected")
+                    while True:
+                        for a in user.getAccounts():
+                            print(f"- {a.GetId()}")
+                        account_id = input("Select Account: ")
+                        acc = next((a for a in user.getAccounts() if a.GetId() == account_id), None)
+                        if acc:
+                            user.getAccounts().remove(acc)
+                            print(f"Removed Account with ID {account_id}")
+                            os.system("pause")
+                            break
+                        else:
+                            print("Account does not exist")
                 case "7":
                     break
 
@@ -221,8 +275,9 @@ if __name__ == "__main__":
             loggedUser = ad
             Main._AdminDashboard()
     else:
-            loggedUser = next(c for c in customers if c.username == validation)
-            Main._CustomerDashboard(loggedUser)
+            loggedUser = next((c for c in customers if c.username == validation), None)
+            if loggedUser:
+                Main._CustomerDashboard(loggedUser)
     
 
     
