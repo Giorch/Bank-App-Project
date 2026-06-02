@@ -11,16 +11,10 @@ customers = [
         email="john.smith@email.com",
         accounts=[
             Account(
-                id=1,
-                accountId="CHK100001",
-                accountType="Checking",
-                balance=2500
+                id=1, accountId="CHK100001", accountType="Checking", balance=2500
             ),
             Account(
-                id=2,
-                accountId="SAV100001",
-                accountType="Savings",
-                balance=10000
+                id=2, accountId="SAV100001", accountType="Savings", balance=10000
             )
         ]
     ),
@@ -30,10 +24,7 @@ customers = [
         email="sarah.johnson@email.com",
         accounts=[
             Account(
-                id=3,
-                accountId="CHK100002",
-                accountType="Checking",
-                balance=1800
+                id=3, accountId="CHK100002", accountType="Checking", balance=1800
             )
         ]
     ),
@@ -43,10 +34,7 @@ customers = [
         email="michael.davis@email.com",
         accounts=[
             Account(
-                id=4,
-                accountId="SAV100002",
-                accountType="Savings",
-                balance=25000
+                id=4, accountId="SAV100002", accountType="Savings", balance=25000
             )
         ]
     ),
@@ -56,16 +44,10 @@ customers = [
         email="emily.wilson@email.com",
         accounts=[
             Account(
-                id=5,
-                accountId="CHK100003",
-                accountType="Checking",
-                balance=3200
+                id=5, accountId="CHK100003", accountType="Checking", balance=3200
             ),
             Account(
-                id=6,
-                accountId="SAV100003",
-                accountType="Savings",
-                balance=7800
+                id=6, accountId="SAV100003", accountType="Savings", balance=7800
             )
         ]
     ),
@@ -75,58 +57,12 @@ customers = [
         email="david.martinez@email.com",
         accounts=[
             Account(
-                id=7,
-                accountId="CHK100004",
-                accountType="Checking",
-                balance=950
+                id=7, accountId="CHK100004", accountType="Checking", balance=950
             )
         ]
     )
 ]
-accounts = [
-    Account(
-        id=1,
-        accountId="CHK100001",
-        accountType="Checking",
-        balance=2500
-    ),
-    Account(
-        id=2,
-        accountId="SAV100001",
-        accountType="Savings",
-        balance=10000
-    ),
-    Account(
-        id=3,
-        accountId="CHK100002",
-        accountType="Checking",
-        balance=1800
-    ),
-    Account(
-        id=4,
-        accountId="SAV100002",
-        accountType="Savings",
-        balance=25000
-    ),
-    Account(
-        id=5,
-        accountId="CHK100003",
-        accountType="Checking",
-        balance=3200
-    ),
-    Account(
-        id=6,
-        accountId="SAV100003",
-        accountType="Savings",
-        balance=7800
-    ),
-    Account(
-        id=7,
-        accountId="CHK100004",
-        accountType="Checking",
-        balance=950
-    )
-]
+
 
 customer_id_counter = len(customers)
 
