@@ -6,7 +6,7 @@ globalAccountCount = 7
 
 customers = [
     Customer(
-        id=1,
+        id="1",
         name="John Smith",
         email="john.smith@email.com",
         accounts=[
@@ -19,7 +19,7 @@ customers = [
         ]
     ),
     Customer(
-        id=2,
+        id="2",
         name="Sarah Johnson",
         email="sarah.johnson@email.com",
         accounts=[
@@ -29,7 +29,7 @@ customers = [
         ]
     ),
     Customer(
-        id=3,
+        id="3",
         name="Michael Davis",
         email="michael.davis@email.com",
         accounts=[
@@ -39,7 +39,7 @@ customers = [
         ]
     ),
     Customer(
-        id=4,
+        id="4",
         name="Emily Wilson",
         email="emily.wilson@email.com",
         accounts=[
@@ -52,7 +52,7 @@ customers = [
         ]
     ),
     Customer(
-        id=5,
+        id="5",
         name="David Martinez",
         email="david.martinez@email.com",
         accounts=[

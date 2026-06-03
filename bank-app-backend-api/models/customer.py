@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import List
+from pydantic import BaseModel, Field
+from typing import List, Optional
 from models.account import Account
 
 class NewCustomer(BaseModel):
@@ -8,4 +8,4 @@ class NewCustomer(BaseModel):
     accounts: List[Account] = []
 
 class Customer(NewCustomer):
-    id: int
+    id: Optional[str] = Field(default=None) 

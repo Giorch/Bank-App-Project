@@ -1,99 +1,109 @@
 from fastapi import APIRouter, HTTPException
-from data.store import customers, generateAccountId
+from bson import ObjectId
+from data.database import customersCollection
 from models.account import Account, NewAccount
+ 
 router = APIRouter(prefix="/api", tags=["Accounts"])
+ 
 
+def generateAccountId(accountType: str, count: int) -> str:
+    prefix = "SAV10000" if accountType.lower() == "savings" else "CHK10000"
+    return f"{prefix}{count}"
+ 
+ 
 @router.get("/accounts")
 def GetAllAccounts():
     ret = []
-    for c in customers:
-        for a in c.accounts:
+    for c in customersCollection.find():
+        for a in c.get("accounts", []):
             ret.append(a)
-
     return ret
-
+ 
 @router.get("/accounts/search")
 def GetAccountByName(name: str):
     ret = []
-    for c in customers:
-        if c.name == name:
-            ret.append(c.accounts)
+    for c in customersCollection.find({"name": name}):
+        ret.append(c.get("accounts", []))
     if not ret:
-        raise HTTPException(
-            status_code=404,
-            detail="Account not found"
-        )
+        raise HTTPException(status_code=404, detail="Account not found")
     return ret
-
+ 
 @router.get("/accounts/{accountId}")
-def GetAccountById(accountId: int):
-
-    ret = next((a for c in customers for a in c.accounts if a.id == accountId), None)
-    if not ret:
-        raise HTTPException(
-            status_code=404,
-            detail="Account not found"
-        )
-    return ret
-
+def GetAccountById(accountId: str):
+    for c in customersCollection.find():
+        for a in c.get("accounts", []):
+            if a.get("accountId") == accountId:
+                return a
+    raise HTTPException(status_code=404, detail="Account not found")
+ 
 @router.post("/accounts")
-def CreateAccount(customerId: int, acc: NewAccount):
-    newId = generateAccountId()
-    if acc.accountType.lower() != "savings" and acc.accountType.lower() != "checking":
+def CreateAccount(customerId: str, acc: NewAccount):
+    if acc.accountType.lower() not in ["savings", "checking"]:
         raise HTTPException(
-            status_code= 422,
+            status_code=422,
             detail=f"Invalid Account Type: {acc.accountType}"
         )
-    for c in customers:
-        if customerId == c.id:
-            prefix = "SAV10000" if acc.accountType.lower() == "savings" else "CHK10000"
-            accId = f"{prefix}{newId}"
-            acc = Account(
-                id= newId,
-                accountId = accId,
-                accountType = acc.accountType,
-                balance = acc.balance
-            )
-            c.accounts.append(acc)
-            return acc
-        
-    raise HTTPException(
-            status_code=404,
-            detail="Customer not found"
-        )
-
-@router.put("/accounts/{id}")
-def UpdateAccount(id: int, acc: NewAccount):
-    if acc.accountType.lower() != "savings" and acc.accountType.lower() != "checking":
+    try:
+        oid = ObjectId(customerId)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid customer ID format")
+ 
+    customer = customersCollection.find_one({"_id": oid})
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+ 
+    count = sum(len(c.get("accounts", [])) for c in customersCollection.find()) + 1
+    new_account = {
+        "accountId": generateAccountId(acc.accountType, count),
+        "accountType": acc.accountType,
+        "balance": acc.balance
+    }
+ 
+    customersCollection.update_one(
+        {"_id": oid},
+        {"$push": {"accounts": new_account}}
+    )
+    return new_account
+ 
+ 
+@router.put("/accounts/{accountId}")
+def UpdateAccount(accountId: str, acc: NewAccount):
+    if acc.accountType.lower() not in ["savings", "checking"]:
         raise HTTPException(
-            status_code= 422,
+            status_code=422,
             detail=f"Invalid Account Type: {acc.accountType}"
         )
-    for c in customers:
-        for a in c.accounts:
-            if a.id == id:
-                a.balance = acc.balance
-                a.accountType = acc.accountType
+    result = customersCollection.update_one(
+        {"accounts.accountId": accountId},
+        {"$set": {
+            "accounts.$.balance": acc.balance,
+            "accounts.$.accountType": acc.accountType
+        }}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Account not found")
+ 
+    for c in customersCollection.find():
+        for a in c.get("accounts", []):
+            if a.get("accountId") == accountId:
                 return a
-    raise HTTPException(
-            status_code=404,
-            detail="Account not found"
-        )
-
-@router.delete("/accounts/{id}")
-def DeleteAccount(id: int):
-    for c in customers:
-        for a in c.accounts:
-            if a.id == id:
-                c.accounts.remove(a)
-                return a
-
-    raise HTTPException(
-            status_code=404,
-            detail="Account not found"
-        )
-    
-
-
-
-
+ 
+@router.delete("/accounts/{accountId}")
+def DeleteAccount(accountId: str):
+   
+    deleted_account = None
+    for c in customersCollection.find():
+        for a in c.get("accounts", []):
+            if a.get("accountId") == accountId:
+                deleted_account = a
+                break
+ 
+    if not deleted_account:
+        raise HTTPException(status_code=404, detail="Account not found")
+ 
+    customersCollection.update_one(
+        {"accounts.accountId": accountId},
+        {"$pull": {"accounts": {"accountId": accountId}}}
+    )
+    return deleted_account
+ 
