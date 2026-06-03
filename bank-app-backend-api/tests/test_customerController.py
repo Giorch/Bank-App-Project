@@ -159,10 +159,10 @@ class TestUpdateCustomer:
         assert response.status_code == 404
         assert response.json()["detail"] == "Customer not found"
         payload = {"name": "NoEmail", "accounts": []}
-        response = client.put("/api/customers/999", json=payload)
+        response = client.put("/api/customers/1", json=payload)
         assert response.status_code == 422
         payload = {"email": "noName@missing.com", "accounts": []}
-        response = client.put("/api/customers/999", json=payload)
+        response = client.put("/api/customers/1", json=payload)
         assert response.status_code == 422
 
 class TestDeleteCustomer:
