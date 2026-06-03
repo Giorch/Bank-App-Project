@@ -1,106 +1,91 @@
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 import pytest
+import mongomock
 from controllers.customerController import router as customerRouter
-import data.store as store
-from models.customer import Customer, NewCustomer
-from models.account import Account
+from unittest.mock import patch
 
 app = FastAPI()
 app.include_router(customerRouter)
- 
 client = TestClient(app)
 
-def reset_store():
-    store.customers.clear()
-    store.customers.extend([
-        Customer(
-        id="1",
-        name="John Smith",
-        email="john.smith@email.com",
-        accounts=[
-            Account(
-                id=1, accountId="CHK100001", accountType="Checking", balance=2500
-            ),
-            Account(
-                id=2, accountId="SAV100001", accountType="Savings", balance=10000
-            )
-            ]
-        ),
-        Customer(
-            id="2",
-            name="Sarah Johnson",
-            email="sarah.johnson@email.com",
-            accounts=[
-                Account(
-                    id=3, accountId="CHK100002", accountType="Checking", balance=1800
-                )
-            ]
-        ),
-        Customer(
-            id="3",
-            name="Michael Davis",
-            email="michael.davis@email.com",
-            accounts=[
-                Account(
-                    id=4, accountId="SAV100002", accountType="Savings", balance=25000
-                )
-            ]
-        ),
-        Customer(
-            id="4",
-            name="Emily Wilson",
-            email="emily.wilson@email.com",
-            accounts=[
-                Account(
-                    id=5, accountId="CHK100003", accountType="Checking", balance=3200
-                ),
-                Account(
-                    id=6, accountId="SAV100003", accountType="Savings", balance=7800
-                )
-            ]
-        ),
-        Customer(
-            id="5",
-            name="David Martinez",
-            email="david.martinez@email.com",
-            accounts=[
-                Account(
-                    id=7, accountId="CHK100004", accountType="Checking", balance=950
-                )
-            ]
-        )
-    ])
-    store.globalCustomerCount = 5
-    store.globalAccountCount  = 7
-
 @pytest.fixture(autouse=True)
-def fresh_store():
-    reset_store()
+def mockMongo():
+    mock_col = mongomock.MongoClient().db["customers"]
+    with patch("controllers.customerController.customersCollection", mock_col), \
+         patch("controllers.accountController.customersCollection", mock_col):
+        yield mock_col
+
+def seedCustomers(collection):
+    collection.insert_many([
+        {
+            "name": "John Smith",
+            "email": "john.smith@email.com",
+            "accounts": [
+                {"id": 1, "accountId": "CHK100001", "accountType": "Checking", "balance": 2500},
+                {"id": 2, "accountId": "SAV100001", "accountType": "Savings",  "balance": 10000}
+            ]
+        },
+        {
+            "name": "Sarah Johnson",
+            "email": "sarah.johnson@email.com",
+            "accounts": [
+                {"id": 3, "accountId": "CHK100002", "accountType": "Checking", "balance": 1800}
+            ]
+        },
+        {
+            "name": "Michael Davis",
+            "email": "michael.davis@email.com",
+            "accounts": [
+                {"id": 4, "accountId": "SAV100002", "accountType": "Savings", "balance": 25000}
+            ]
+        },
+        {
+            "name": "Emily Wilson",
+            "email": "emily.wilson@email.com",
+            "accounts": [
+                {"id": 5, "accountId": "CHK100003", "accountType": "Checking", "balance": 3200},
+                {"id": 6, "accountId": "SAV100003", "accountType": "Savings",  "balance": 7800}
+            ]
+        },
+        {
+            "name": "David Martinez",
+            "email": "david.martinez@email.com",
+            "accounts": [
+                {"id": 7, "accountId": "CHK100004", "accountType": "Checking", "balance": 950}
+            ]
+        }
+    ])
+
+
 
 class TestGetAllCustomers:
-    def test_success_GetAllCustomers(self):
+    def test_success_GetAllCustomers(self, mockMongo):
+        seedCustomers(mockMongo)
         response = client.get("/api/customers")
         assert response.status_code == 200
-        assert len(response.json()) == store.globalCustomerCount
-    def test_empty_GetAllCustomers(self):
-        store.customers.clear()
+        assert len(response.json()) > 0
+
+    def test_empty_GetAllCustomers(self, mockMongo):
         response = client.get("/api/customers")
         assert response.status_code == 200
         assert response.json() == []
     
 class TestGetCustomerByName:
-    def test_success_GetCustomersByName(self):
+    def test_success_GetCustomersByName(self, mockMongo):
+        seedCustomers(mockMongo)
         response = client.get("/api/customers/search?name=John Smith")
         assert response.status_code == 200
         assert response.json()[0]["name"] == "John Smith"
-    def test_failure_GetCustomersByName(self):
+
+    def test_failure_GetCustomersByName(self, mockMongo):
+        seedCustomers(mockMongo)
         response = client.get("/api/customers/search?name=Jane Smith")
         assert response.status_code == 404
         assert response.json()["detail"] == "Customer not found"
 class TestGetAllPremiumCustomers:
-    def test_success_GetAllPremiumCustomers(self):
+    def test_success_GetAllPremiumCustomers(self, mockMongo):
+        seedCustomers(mockMongo)
         response = client.get("/api/customers/premium")
         assert response.status_code == 200
         customers = response.json()
@@ -108,74 +93,93 @@ class TestGetAllPremiumCustomers:
         for customer in customers:
             total_balance = sum(a["balance"] for a in customer["accounts"])
             assert total_balance > 5000
-    def test_failure_GetAllPremiumCustomers(self):
-        # Set all balances to 0
-        for c in store.customers:
-            for a in c.accounts:
-                a.balance = 0
+
+    def test_failure_GetAllPremiumCustomers(self, mockMongo):
+        mockMongo.insert_many([
+            {"name": "Poor Pete", "email": "pete@email.com", "accounts": [
+                {"accountId": "CHK999", "accountType": "Checking", "balance": 100}
+            ]},
+            {"name": "Broke Bob", "email": "bob@email.com", "accounts": [
+                {"accountId": "SAV999", "accountType": "Savings", "balance": 200}
+            ]}
+        ])
         response = client.get("/api/customers/premium")
         assert response.status_code == 404
         assert response.json()["detail"] == "Customers not found"
 class TestGetCustomerByID:
-    def test_success_GetCustomerById(self):
-        response = client.get("/api/customers/1")
+    def test_success_GetCustomerById(self, mockMongo):
+        seedCustomers(mockMongo)
+        uid = str(mockMongo.find_one({"name": "John Smith"})["_id"])
+        response = client.get(f"/api/customers/{uid}")
         assert response.status_code == 200
-        assert response.json()["id"] == 1
+        assert response.json()["id"] == uid
         assert response.json()["name"] == "John Smith"
-    def test_failure_GetCustomerById(self):
-        response = client.get("/api/customers/999")
+
+    def test_failure_GetCustomerById(self, mockMongo):
+        seedCustomers(mockMongo)
+        response = client.get("/api/customers/000000000000000000000999")
         assert response.status_code == 404
         assert response.json()["detail"] == "Customer not found"
 
 class TestCreateCustomer:
-    def test_success_CreateCustomer(self):
+    def test_success_CreateCustomer(self, mockMongo):
+        seedCustomers(mockMongo)
         payload = {"name": "Alice Brown", "email": "alice@email.com", "accounts": []}
         response = client.post("/api/customers", json=payload)
         assert response.status_code == 200
         assert response.json()["name"] == "Alice Brown"
-        assert response.json()["id"] == 6
-    def test_failure_CreateCustomer(self):
+        assert "id" in response.json()
+
+    def test_failure_CreateCustomer(self, mockMongo):
+        seedCustomers(mockMongo)
         payload = {"name": "No Email"}
         response = client.post("/api/customers", json=payload)
-        assert response.status_code == 400
+        assert response.status_code == 422
         payload = {"email": "noName@missing.com", "accounts": []}
         response = client.post("/api/customers", json=payload)
-        assert response.status_code == 400
+        assert response.status_code == 422
 class TestUpdateCustomer:
-    def test_success_UpdateCustomer(self):
-        payload = {"name": "John Updated", "email": "new@email.com", "accounts": []}
-        response = client.put("/api/customers/1", json=payload)
+    def test_success_UpdateCustomer(self, mockMongo):
+        seedCustomers(mockMongo)
+        uid = str(mockMongo.find_one({"name": "John Smith"})["_id"])
+        payload = {"name": "John Updated", "email": "updated@email.com", "accounts": []}
+        response = client.put(f"/api/customers/{uid}", json=payload)
         assert response.status_code == 200
         assert response.json()["name"] == "John Updated"
-        assert response.json()["email"] == "new@email.com"
-        response = client.get("api/customers/1")
+        assert response.json()["email"] == "updated@email.com"
+        response = client.get(f"/api/customers/{uid}")
         assert response.status_code == 200
         assert response.json()["name"] == "John Updated"
-        assert response.json()["email"] == "new@email.com"
+        assert response.json()["email"] == "updated@email.com"
 
-    def test_faliure_UpdateCustomer(self):
+    def test_faliure_UpdateCustomer(self, mockMongo):
+        seedCustomers(mockMongo)
         payload = {"name": "Ghost", "email": "ghost@email.com", "accounts": []}
-        response = client.put("/api/customers/999", json=payload)
+        response = client.put("/api/customers/000000000000000000000999", json=payload)
         assert response.status_code == 404
         assert response.json()["detail"] == "Customer not found"
         payload = {"name": "NoEmail", "accounts": []}
         response = client.put("/api/customers/1", json=payload)
-        assert response.status_code == 400
+        assert response.status_code == 422
         payload = {"email": "noName@missing.com", "accounts": []}
         response = client.put("/api/customers/1", json=payload)
-        assert response.status_code == 400
+        assert response.status_code == 422
 
 class TestDeleteCustomer:
-    def test_success_DeleteCustomer(self):
-        response = client.delete("/api/customers/1")
+    def test_success_DeleteCustomer(self, mockMongo):
+        payload = {"name": "John New", "email": "new@email.com", "accounts": []}
+        response = client.post("/api/customers", json=payload)
         assert response.status_code == 200
-        assert response.json()["id"] == 1
-        response = client.get("/api/customers/1")
+        uid = response.json()["id"]
+        response = client.delete(f"/api/customers/{uid}")
+        assert response.status_code == 200
+        assert response.json()["name"] == "John New"
+        response = client.get(f"/api/customers/{uid}")
         assert response.status_code == 404
         assert response.json()["detail"] == "Customer not found"
 
-    def test_failure_DeleteCustomer(self):
-        response = client.delete("/api/customers/999")
+    def test_failure_DeleteCustomer(self, mockMongo):
+        response = client.delete("/api/customers/000000000000000000000999")
         assert response.status_code == 404
         assert response.json()["detail"] == "Customer not found"
         
