@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import pytest
 from controllers.customerController import router as customerRouter
 import data.store as store
-from models.customer import Customer
+from models.customer import Customer, NewCustomer
 from models.account import Account
 
 app = FastAPI()
@@ -91,11 +91,96 @@ class TestGetAllCustomers:
         assert response.json() == []
     
 class TestGetCustomerByName:
-    def test_success_GetAllCustomers(self):
+    def test_success_GetCustomersByName(self):
         response = client.get("/api/customers/search?name=John Smith")
         assert response.status_code == 200
-        assert len(response.json()) > 0
-    def test_failure_GetAllCustomers(self):
+        assert response.json()[0]["name"] == "John Smith"
+    def test_failure_GetCustomersByName(self):
         response = client.get("/api/customers/search?name=Jane Smith")
         assert response.status_code == 404
         assert response.json()["detail"] == "Customer not found"
+class TestGetAllPremiumCustomers:
+    def test_success_GetAllPremiumCustomers(self):
+        response = client.get("/api/customers/premium")
+        assert response.status_code == 200
+        customers = response.json()
+        assert len(customers) > 0
+        for customer in customers:
+            total_balance = sum(a["balance"] for a in customer["accounts"])
+            assert total_balance > 5000
+    def test_failure_GetAllPremiumCustomers(self):
+        # Set all balances to 0
+        for c in store.customers:
+            for a in c.accounts:
+                a.balance = 0
+        response = client.get("/api/customers/premium")
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Customers not found"
+class TestGetCustomerByID:
+    def test_success_GetCustomerById(self):
+        response = client.get("/api/customers/1")
+        assert response.status_code == 200
+        assert response.json()["id"] == 1
+        assert response.json()["name"] == "John Smith"
+    def test_failure_GetCustomerById(self):
+        response = client.get("/api/customers/999")
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Customer not found"
+
+class TestCreateCustomer:
+    def test_success_CreateCustomer(self):
+        payload = {"name": "Alice Brown", "email": "alice@email.com", "accounts": []}
+        response = client.post("/api/customers", json=payload)
+        assert response.status_code == 200
+        assert response.json()["name"] == "Alice Brown"
+        assert response.json()["id"] == 6
+    def test_failure_CreateCustomer(self):
+        payload = {"name": "No Email"}
+        response = client.post("/api/customers", json=payload)
+        assert response.status_code == 422 
+        payload = {"email": "noName@missing.com", "accounts": []}
+        response = client.post("/api/customers", json=payload)
+        assert response.status_code == 422 
+class TestUpdateCustomer:
+    def test_success_UpdateCustomer(self):
+        payload = {"name": "John Updated", "email": "new@email.com", "accounts": []}
+        response = client.put("/api/customers/1", json=payload)
+        assert response.status_code == 200
+        assert response.json()["name"] == "John Updated"
+        assert response.json()["email"] == "new@email.com"
+        response = client.get("api/customers/1")
+        assert response.status_code == 200
+        assert response.json()["name"] == "John Updated"
+        assert response.json()["email"] == "new@email.com"
+
+    def test_faliure_UpdateCustomer(self):
+        payload = {"name": "Ghost", "email": "ghost@email.com", "accounts": []}
+        response = client.put("/api/customers/999", json=payload)
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Customer not found"
+        payload = {"name": "NoEmail", "accounts": []}
+        response = client.put("/api/customers/999", json=payload)
+        assert response.status_code == 422
+        payload = {"email": "noName@missing.com", "accounts": []}
+        response = client.put("/api/customers/999", json=payload)
+        assert response.status_code == 422
+
+class TestDeleteCustomer:
+    def test_success_DeleteCustomer(self):
+        response = client.delete("/api/customers/1")
+        assert response.status_code == 200
+        assert response.json()["id"] == 1
+        response = client.get("/api/customers/1")
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Customer not found"
+
+    def test_failure_DeleteCustomer(self):
+        response = client.delete("/api/customers/999")
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Customer not found"
+        
+    
+
+
+
+

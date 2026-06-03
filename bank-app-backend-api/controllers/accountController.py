@@ -39,6 +39,11 @@ def GetAccountById(accountId: int):
 @router.post("/accounts")
 def CreateAccount(customerId: int, acc: NewAccount):
     newId = generateAccountId()
+    if acc.accountType.lower() != "savings" and acc.accountType.lower() != "checking":
+        raise HTTPException(
+            status_code= 422,
+            detail=f"Invalid Account Type: {acc.accountType}"
+        )
     for c in customers:
         if customerId == c.id:
             prefix = "SAV10000" if acc.accountType.lower() == "savings" else "CHK10000"
@@ -59,6 +64,11 @@ def CreateAccount(customerId: int, acc: NewAccount):
 
 @router.put("/accounts/{id}")
 def UpdateAccount(id: int, acc: NewAccount):
+    if acc.accountType.lower() != "savings" and acc.accountType.lower() != "checking":
+        raise HTTPException(
+            status_code= 422,
+            detail=f"Invalid Account Type: {acc.accountType}"
+        )
     for c in customers:
         for a in c.accounts:
             if a.id == id:

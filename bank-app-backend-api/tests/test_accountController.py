@@ -71,6 +71,7 @@ def reset_store():
                 )
             ]
         )
+
     ])
     store.globalCustomerCount = 5
     store.globalAccountCount  = 7
@@ -78,4 +79,99 @@ def reset_store():
 @pytest.fixture(autouse=True)
 def fresh_store():
     reset_store()
+
+
+class TestGetAllAccounts:
+    def test_success_GetAllAccounts(self):
+        response = client.get("/api/accounts")
+        assert response.status_code == 200
+        assert len(response.json()) == store.globalAccountCount
+    def test_empty_GetAllAccounts(self):
+        store.customers.clear()
+        response = client.get("/api/accounts")
+        assert response.status_code == 200
+        assert response.json() == []
+    
+class TestGetAccountByName:
+    def test_success_GetAccountsByName(self):
+        response = client.get("/api/accounts/search?name=John Smith")
+        assert response.status_code == 200
+        results = response.json()
+        assert len(results) > 0
+        for account_list in results:
+            for a in account_list:
+                assert "accountId" in a
+                assert "accountType" in a
+                assert "balance" in a
+    def test_failure_GetAccountsByName(self):
+        response = client.get("/api/accounts/search?name=Jane Smith")
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Account not found"
+
+class TestGetAccountByID:
+    def test_success_GetAccountById(self):
+        response = client.get("/api/accounts/1")
+        assert response.status_code == 200
+        assert response.json()["id"] == 1
+        assert response.json()["accountId"] == "CHK100001"
+    def test_failure_GetAccountById(self):
+        response = client.get("/api/accounts/999")
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Account not found"
+
+class TestCreateAccount:
+    def test_success_CreateAccount(self):
+        payload = {"accountType": "Savings", "balance": 2122}
+        response = client.post("/api/accounts?customerId=1", json=payload)
+        assert response.status_code == 200
+        assert response.json()["balance"] == 2122
+        assert response.json()["accountType"] == "Savings"
+    def test_failure_CreateAccount(self):
+        payload = {"accountType": "Savings"}
+        response = client.post("/api/accounts?customerId=1", json=payload)
+        assert response.status_code == 422 
+        payload = {"accountType": "testing", "balance": 2122}
+        response = client.post("/api/accounts?customerId=1", json=payload)
+        assert response.status_code == 422 
+        assert response.json()["detail"] == "Invalid Account Type: testing"
+        payload = {"accountType": "Savings", "balance": 2122}
+        response = client.post("/api/accounts?customerId=999", json=payload)
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Customer not found"
+class TestUpdateAccount:
+    def test_success_UpdateAccount(self):
+        payload = {"accountType": "Checking","balance": 1111111}
+        response = client.put("/api/accounts/1", json=payload)
+        assert response.status_code == 200
+        assert response.json()["accountType"] == "Checking"
+        assert response.json()["balance"] == 1111111
+        response = client.get("/api/accounts/1")
+        assert response.status_code == 200
+        assert response.json()["id"] == 1
+        assert response.json()["accountType"] == "Checking"
+        assert response.json()["balance"] == 1111111
+
+    def test_faliure_UpdateAccount(self):
+        payload = {"accountType": "Checking","balance": 1111111}
+        response = client.put("/api/accounts/999", json=payload)
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Account not found"
+        payload = {"accountType": "Testing","balance": 1111111}
+        response = client.put("/api/accounts/1", json=payload)
+        assert response.status_code == 422
+        assert response.json()["detail"] == "Invalid Account Type: Testing"
+
+class TestDeleteAccount:
+    def test_success_DeleteAccount(self):
+        response = client.delete("/api/accounts/1")
+        assert response.status_code == 200
+        assert response.json()["id"] == 1
+        response = client.get("/api/accounts/1")
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Account not found"
+
+    def test_failure_DeleteAccount(self):
+        response = client.delete("/api/accounts/999")
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Account not found"
 
