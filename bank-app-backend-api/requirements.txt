@@ -3,3 +3,6 @@ uvicorn
 pytest
 "pymongo[svr]"
 mongomock
+python-dotenv
+pydantic==2.5.0
+pydantic-settings==2.1.0

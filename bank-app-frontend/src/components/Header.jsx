@@ -4,9 +4,8 @@ import "./Header.css";
 function Header({ onNavigate, currentPage }) {
     const navItems = [
         { id: "home", label: "Home" },
-        { id: "about", label: "About" },
-        { id: "contact", label: "Contact" },
-        { id: "data", label: "Data" }
+        { id: "customer", label: "Customers" },
+        { id: "account", label: "Accounts" }
     ];
 
     return (

@@ -1,9 +1,8 @@
 import { useState } from "react";
 import Header from "./components/Header";
-import Data from "./pages/Data";
+import Customer from "./pages/Customer";
+import Account from "./pages/Account";
 import Home from "./pages/Home";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
 import "./App.css";
 
 function App() {
@@ -17,12 +16,10 @@ function App() {
         switch (currentPage) {
             case "home":
                 return <Home />;
-            case "about":
-                return <About />;
-            case "contact":
-                return <Contact />;
-            case "data":
-                return <Data />;
+            case "customer":
+                return <Customer />;
+            case "account":
+                return <Account />;
             default:
                 return <Home />;
         }
