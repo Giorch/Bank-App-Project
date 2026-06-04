@@ -1,5 +1,5 @@
 import axios from "axios"
-const API_URL = "https://bank-app-project-cpxu.onrender.com/api"
+const API_URL = import.meta.env.VITE_API_URL;
 
 export const getAllCustomers = () =>
     axios.get(`${API_URL}/customers`);
