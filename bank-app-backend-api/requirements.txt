@@ -1,7 +1,7 @@
 fastapi
 uvicorn
 pytest
-"pymongo[svr]"
+pymongo[svr]
 mongomock
 python-dotenv
 pydantic==2.5.0
