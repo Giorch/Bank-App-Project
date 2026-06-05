@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
     getAllCustomers,
     createCustomer,
@@ -13,6 +13,7 @@ function Customer() {
 
     const [newCustomer, setNewCustomer] = useState({name:"", email: ""})
     const [editCustomer, setEditCustomer] = useState(null);
+     const [expandedCustomerId, setExpandedCustomerId] = useState(null);
 
     useEffect(() => {
         fetchCustomers();
@@ -28,6 +29,16 @@ function Customer() {
     };
 
     const handleCreate = async () => {
+
+        if (!newCustomer.name.trim()) {
+        setError("Name is required");
+        return;
+        }
+
+        if (!newCustomer.email.trim()) {
+            setError("Email is required");
+            return;
+        }
         try {
             await createCustomer({ ...newCustomer, accounts: [] });
             setNewCustomer({ name: "", email: "" });
@@ -104,18 +115,48 @@ function Customer() {
                 </thead>
                 <tbody>
                     {customers.map((c) => (
-                        <tr key={c.id}>
+                        <React.Fragment key={c.id}>
+                        <tr>
                             <td>{c.id}</td>
                             <td>{c.name}</td>
                             <td>{c.email}</td>
                             <td>
+                                <button onClick={() => setExpandedCustomerId(expandedCustomerId === c.id ? null : c.id)}>
+                                        {expandedCustomerId === c.id ? "Hide Accounts" : "View Accounts"}
+                                    </button>
                                 <button onClick={() => setEditCustomer(c)}>Edit</button>
                                 <button onClick={() => handleDelete(c.id)}>Delete</button>
                             </td>
                         </tr>
+                            {expandedCustomerId === c.id && c.accounts && c.accounts.length > 0 && (
+                                <tr>
+                                    <td colSpan="4">
+                                        <table className="accounts-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Account ID</th>
+                                                    <th>Type</th>
+                                                    <th>Balance</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {c.accounts.map((a) => (
+                                                    <tr key={a.accountId}>
+                                                        <td>{a.accountId}</td>
+                                                        <td>{a.accountType}</td>
+                                                        <td>${a.balance.toLocaleString()}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+                            )}
+                        </React.Fragment>
                     ))}
                 </tbody>
             </table>
+
         </div>
     );
 }

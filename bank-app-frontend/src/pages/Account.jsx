@@ -46,6 +46,12 @@ function Account() {
             setError("Please select a customer");
             return;
         }
+
+        if (!newAccount.accountType) {
+            setError("Please select an account type");
+            return;
+        }
+
         try {
             await createAccount(selectedCustomerId, { ...newAccount, balance: parseFloat(newAccount.balance) });
             setNewAccount({ accountType: "", balance: "" });
@@ -94,11 +100,19 @@ function Account() {
                         </option>
                     ))}
                 </select>
-                <input
-                    placeholder="Account Type"
+                <select
                     value={newAccount.accountType}
-                    onChange={(e) => setNewAccount({ ...newAccount, accountType: e.target.value })}
-                />
+                    onChange={(e) =>
+                        setNewAccount({
+                            ...newAccount,
+                            accountType: e.target.value
+                        })
+                    }
+                >
+                    <option value="">Select Account Type</option>
+                    <option value="Checking">Checking</option>
+                    <option value="Savings">Savings</option>
+                </select>
                 <input
                     placeholder="Balance"
                     type="number"

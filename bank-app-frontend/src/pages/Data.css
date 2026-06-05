@@ -170,6 +170,27 @@
     box-shadow: 0 4px 8px rgba(245, 101, 101, 0.3);
 }
 
+.accounts-table {
+    width: 100%;
+    margin-top: 10px;
+    border-collapse: collapse;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.accounts-table th {
+    background: #edf2f7;
+    color: #2d3748;
+    font-weight: 600;
+    padding: 12px;
+    text-align: left;
+}
+
+.accounts-table td {
+    padding: 12px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
 .error {
     color: #c53030;
     background: #fff5f5;
