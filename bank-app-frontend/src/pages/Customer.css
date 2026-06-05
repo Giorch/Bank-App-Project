@@ -191,6 +191,32 @@
     border-bottom: 1px solid #e2e8f0;
 }
 
+.view-toggle {
+    display: flex;
+    gap: 10px;
+    margin: 1.5rem 0;
+}
+
+.view-toggle button {
+    padding: 10px 16px;
+    border: 2px solid #ccc;
+    background: rgb(12, 0, 78);
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.view-toggle button.active {
+    background: #4f46e5;
+    color: white;
+    border-color: #4f46e5;
+}
+
+.view-toggle button:hover {
+    border-color: #4f46e5;
+}
+
 .error {
     color: #c53030;
     background: #fff5f5;
