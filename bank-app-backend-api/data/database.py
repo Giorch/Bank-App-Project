@@ -18,7 +18,7 @@ try:
     customersCollection = db["customers"]
     print("✅ MongoDB connected")
 except Exception as e:
-    print(f"❌ Error: {e}")
+    print(f"Error: {e}")
     raise
 
  
