@@ -15,13 +15,13 @@ function App() {
     const renderPage = () => {
         switch (currentPage) {
             case "home":
-                return <Home />;
+                return <Home onNavigate={handleNavigate} />;
             case "customer":
-                return <Customer />;
+                return <Customer onNavigate={handleNavigate}/>;
             case "account":
-                return <Account />;
+                return <Account onNavigate={handleNavigate}/>;
             default:
-                return <Home />;
+                return <Home onNavigate={handleNavigate} />;
         }
     };
 
