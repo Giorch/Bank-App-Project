@@ -5,7 +5,7 @@ import {
     updateCustomer,
     deleteCustomer
 } from "../api/DataService";
-import "./Data.css";
+import "./Customer.css";
 
 function Customer() {
     const [customers, setCustomers] = useState([]);
